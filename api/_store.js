@@ -5,6 +5,8 @@ const ROOM_TTL_SECONDS = 60 * 60 * 24 * 7;
 const CODE_ALPHABET = 'ACDEFGHJKLMNPQRTUVWXY34679';
 const CODE_LENGTH = 4;
 const MUTATE_ATTEMPTS = 6;
+const CONNECT_TIMEOUT_MS = 4000;
+const MAX_RECONNECT_ATTEMPTS = 3;
 
 let clientPromise = null;
 
@@ -22,13 +24,34 @@ async function getClient() {
     if (!clientPromise) {
         const client = createClient({
             url: process.env.REDIS_URL,
-            socket: { connectTimeout: 5000, reconnectStrategy: retries => Math.min(retries * 100, 1000) },
+            socket: {
+                connectTimeout: CONNECT_TIMEOUT_MS,
+                // Give up rather than retrying forever: a request that can't
+                // reach Redis must fail fast so the client falls back instead
+                // of hanging until the function times out.
+                reconnectStrategy: retries =>
+                    (retries >= MAX_RECONNECT_ATTEMPTS
+                        ? new Error('Redis is unreachable')
+                        : Math.min((retries + 1) * 200, 1000)),
+            },
         });
+
         client.on('error', err => console.error('Redis error:', err.message));
-        clientPromise = client.connect().then(() => client).catch(err => {
-            clientPromise = null;
-            throw err;
+
+        const pending = client.connect().then(() => client).catch(err => {
+            if (clientPromise === pending) clientPromise = null;
+            const error = new Error('Room storage is unreachable');
+            error.code = 'sync_unavailable';
+            error.cause = err;
+            throw error;
         });
+
+        // Drop the cached client once it closes so the next request reconnects.
+        client.on('end', () => {
+            if (clientPromise === pending) clientPromise = null;
+        });
+
+        clientPromise = pending;
     }
 
     return clientPromise;
