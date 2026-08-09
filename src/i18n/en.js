@@ -144,8 +144,9 @@ export default {
         idle: 'Court free',
         idleWaiting: 'Waiting for a group to finish',
         queuedNext: 'Next up',
+        offerExtra: 'Play an extra game instead',
         fillerBadge: 'Extra game',
-        fillerHint: 'No planned game fits the players who are free, so here is a fresh one.',
+        fillerHint: 'Off the plan — an extra game for whoever is free right now.',
         plannedRound: n => `Planned round ${n}`,
         finished: 'All games played',
         finishedHint: 'Add more rounds if you are still on court.',
@@ -204,10 +205,10 @@ export default {
                 effect: 'Groups that finish early start their next game instead of watching the slowest court.',
             },
             {
-                title: 'Extra games',
+                title: 'Extra games, on request',
                 description:
-                    'If no queued game fits the players standing around, the app builds one from whoever is free, favouring those with the fewest games and freshest partners.',
-                effect: 'Courts stay busy even when the plan and reality drift apart.',
+                    'Sometimes the plan needs players who are still mid-game and an idle court cannot be filled from it. Tap "play an extra game" and the app builds one from whoever is free, favouring the fewest games and freshest partners.',
+                effect: 'An escape hatch when waiting is not worth it — never offered automatically, so the schedule still runs.',
             },
             {
                 title: 'Shared room',

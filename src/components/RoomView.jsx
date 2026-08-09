@@ -119,6 +119,7 @@ export default function RoomView({ room, connection, act, actionError, dismissEr
                 ))}
             </nav>
 
+            {isLocal && <div className="warning-banner">{l.localOnlyHint}</div>}
             {actionError && <div className="error-banner room-error">{actionError}</div>}
 
             {tab === 'now' && (

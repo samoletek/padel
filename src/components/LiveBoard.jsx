@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from '../i18n';
 
 function elapsedLabel(startedAt, now) {
@@ -34,6 +35,104 @@ export function Matchup({ match, nameOf, me, showScore }) {
     );
 }
 
+function CourtCard({ slot, nameOf, me, now, nothingLeft, onStart, onFill, onScore, onCancel }) {
+    const { t } = useTranslation();
+    const l = t.room;
+    const { court, live, next, filler } = slot;
+    const [showExtra, setShowExtra] = useState(false);
+
+    const upcoming = live || next;
+    const mine = upcoming && [...upcoming.a, ...upcoming.b].includes(me);
+
+    return (
+        <section className={`court-card ${live ? 'is-live' : ''} ${mine ? 'is-mine' : ''}`}>
+            <header className="court-card-header">
+                <div className="court-name">{court.name}</div>
+                {live ? (
+                    <div className="court-status status-live">
+                        <span className="pulse-dot" />
+                        {elapsedLabel(live.startedAt, now) || l.statusLive}
+                    </div>
+                ) : (
+                    <div className="court-status">{next ? l.queuedNext : l.idle}</div>
+                )}
+            </header>
+
+            {live && (
+                <>
+                    <Matchup match={live} nameOf={nameOf} me={me} />
+                    <div className="court-actions">
+                        <button className="btn btn-primary btn-block" onClick={() => onScore(live)}>
+                            {l.enterScore}
+                        </button>
+                        <button className="btn btn-ghost btn-small" onClick={() => onCancel(live.id)}>
+                            {l.stop}
+                        </button>
+                    </div>
+                </>
+            )}
+
+            {!live && next && (
+                <>
+                    <Matchup match={next} nameOf={nameOf} me={me} />
+                    <div className="court-meta">{l.plannedRound(next.round + 1)}</div>
+                    <div className="court-actions">
+                        <button
+                            className="btn btn-primary btn-block"
+                            onClick={() => onStart(next.id, court.id)}
+                        >
+                            {l.startHere}
+                        </button>
+                    </div>
+                </>
+            )}
+
+            {!live && !next && (
+                <>
+                    <div className="court-empty">{nothingLeft ? l.finished : l.idleWaiting}</div>
+
+                    {/* Off-plan games stay behind a deliberate tap: offering one every
+                        time a court frees up would quietly replace the schedule. */}
+                    {filler && !showExtra && (
+                        <div className="court-actions">
+                            <button
+                                className="btn btn-ghost btn-small"
+                                onClick={() => setShowExtra(true)}
+                            >
+                                {l.offerExtra}
+                            </button>
+                        </div>
+                    )}
+
+                    {filler && showExtra && (
+                        <>
+                            <Matchup match={filler} nameOf={nameOf} me={me} />
+                            <div className="court-meta">
+                                <span className="badge badge-filler">{l.fillerBadge}</span>
+                                {l.fillerHint}
+                            </div>
+                            <div className="court-actions">
+                                <button
+                                    className="btn btn-secondary btn-block"
+                                    onClick={() => onFill(court.id, filler)}
+                                >
+                                    {l.startHere}
+                                </button>
+                                <button
+                                    className="btn btn-ghost btn-small"
+                                    onClick={() => setShowExtra(false)}
+                                >
+                                    {t.common.cancel}
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </>
+            )}
+        </section>
+    );
+}
+
 export default function LiveBoard({
     room,
     board,
@@ -54,82 +153,20 @@ export default function LiveBoard({
 
     return (
         <div className="live-board">
-            {board.byCourt.map(({ court, live, next, filler }) => {
-                const involved = live || next;
-                const mine = filler
-                    ? [...filler.a, ...filler.b].includes(me)
-                    : involved && [...involved.a, ...involved.b].includes(me);
-
-                return (
-                    <section key={court.id} className={`court-card ${live ? 'is-live' : ''} ${mine ? 'is-mine' : ''}`}>
-                        <header className="court-card-header">
-                            <div className="court-name">{court.name}</div>
-                            {live ? (
-                                <div className="court-status status-live">
-                                    <span className="pulse-dot" />
-                                    {elapsedLabel(live.startedAt, now) || l.statusLive}
-                                </div>
-                            ) : (
-                                <div className="court-status">{next || filler ? l.queuedNext : l.idle}</div>
-                            )}
-                        </header>
-
-                        {live && (
-                            <>
-                                <Matchup match={live} nameOf={nameOf} me={me} />
-                                <div className="court-actions">
-                                    <button className="btn btn-primary btn-block" onClick={() => onScore(live)}>
-                                        {l.enterScore}
-                                    </button>
-                                    <button className="btn btn-ghost btn-small" onClick={() => onCancel(live.id)}>
-                                        {l.stop}
-                                    </button>
-                                </div>
-                            </>
-                        )}
-
-                        {!live && next && (
-                            <>
-                                <Matchup match={next} nameOf={nameOf} me={me} />
-                                <div className="court-meta">{l.plannedRound(next.round + 1)}</div>
-                                <div className="court-actions">
-                                    <button
-                                        className="btn btn-primary btn-block"
-                                        onClick={() => onStart(next.id, court.id)}
-                                    >
-                                        {l.startHere}
-                                    </button>
-                                </div>
-                            </>
-                        )}
-
-                        {!live && !next && filler && (
-                            <>
-                                <Matchup match={filler} nameOf={nameOf} me={me} />
-                                <div className="court-meta">
-                                    <span className="badge badge-filler">{l.fillerBadge}</span>
-                                    {l.fillerHint}
-                                </div>
-                                <div className="court-actions">
-                                    {/* Secondary: an unplanned game is an offer, not the plan. */}
-                                    <button
-                                        className="btn btn-secondary btn-block"
-                                        onClick={() => onFill(court.id, filler)}
-                                    >
-                                        {l.startHere}
-                                    </button>
-                                </div>
-                            </>
-                        )}
-
-                        {!live && !next && !filler && (
-                            <div className="court-empty">
-                                {nothingLeft ? l.finished : l.idleWaiting}
-                            </div>
-                        )}
-                    </section>
-                );
-            })}
+            {board.byCourt.map(slot => (
+                <CourtCard
+                    key={slot.court.id}
+                    slot={slot}
+                    nameOf={nameOf}
+                    me={me}
+                    now={now}
+                    nothingLeft={nothingLeft}
+                    onStart={onStart}
+                    onFill={onFill}
+                    onScore={onScore}
+                    onCancel={onCancel}
+                />
+            ))}
 
             <div className="board-footer">
                 <div className="resting">
