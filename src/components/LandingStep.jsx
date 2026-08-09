@@ -16,17 +16,17 @@ export default function LandingStep({ onNext, onJoin }) {
 
             <p className="landing-subtitle">{l.subtitle}</p>
 
-            <div className="features">
-                {l.features.map(feature => (
-                    <div className="feature-card" key={feature.title}>
-                        <div className="feature-icon">{feature.icon}</div>
-                        <div className="feature-title">{feature.title}</div>
-                        <div className="feature-desc">{feature.desc}</div>
-                    </div>
+            <ol className="how-steps">
+                {l.steps.map((step, index) => (
+                    <li className="how-step" key={step.title}>
+                        <span className="how-step-num">{String(index + 1).padStart(2, '0')}</span>
+                        <span className="how-step-text">
+                            <strong>{step.title}</strong>
+                            <span>{step.desc}</span>
+                        </span>
+                    </li>
                 ))}
-            </div>
-
-            <div className="tilt-note">{l.note}</div>
+            </ol>
 
             <div className="landing-actions">
                 <button className="btn btn-primary btn-large" onClick={onNext}>

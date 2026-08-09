@@ -19,30 +19,25 @@ export default {
     },
 
     landing: {
-        badge: 'Free forever · No app store',
+        badge: 'Free · No app store',
         title1: 'Padel mixes',
         title2: 'that keep',
         titleHighlight: 'every court busy',
-        subtitle:
-            'Americano, Mexicano and Team Americano rotations for 4 to 24 players. Open one room, everyone joins from their own phone, and any player can start a game or enter a score.',
-        features: [
+        subtitle: 'Americano, Mexicano and Team Americano for 4 to 24 players.',
+        steps: [
             {
-                icon: 'ROOM',
-                title: 'One room, every phone',
-                desc: 'Share a four-letter code. Every player sees the same live schedule and can submit results — no more waiting for whoever holds the phone.',
+                title: 'Set up the session',
+                desc: 'Pick a mix, how many are playing, their names and your courts.',
             },
             {
-                icon: 'FLOW',
-                title: 'Courts never idle',
-                desc: 'When a court frees up the app offers the next game whose four players are actually off court, so finished groups start straight away.',
+                title: 'Share the code',
+                desc: 'Everyone joins from their own phone. Nothing to install.',
             },
             {
-                icon: 'FAIR',
-                title: 'Fresh partners',
-                desc: 'The draw maximises new partners and opponents while keeping everyone on roughly the same number of games.',
+                title: 'Play',
+                desc: 'The board shows who is on which court. Any player can start a game or enter a score.',
             },
         ],
-        note: 'Nothing to install, no account, no subscription. Rooms stay available for a week.',
         cta: 'Get Started',
         joinCta: 'Join a room',
         joinTitle: 'Join a room',
@@ -183,44 +178,32 @@ export default {
         kicker: 'Padel Mix',
         title: 'How the schedule is built',
         intro:
-            'The draw is made once, up front, and then the room simply tracks which games have been played. Everything below happens on every phone at the same time.',
+            'The draw is made once, up front. After that the room just tracks which games have been played.',
         effectLabel: 'What you get',
         sections: [
             {
                 title: 'Fresh partners first',
                 description:
-                    'Every possible pairing carries a cost that grows sharply each time it repeats. The draw searches hundreds of arrangements per round and keeps the cheapest one.',
-                effect: 'Up to 24 players usually get through a full session without repeating a single partner.',
+                    'A pairing costs more every time it repeats, and the draw keeps the cheapest of hundreds of arrangements per round.',
+                effect: 'Up to 24 players get through a session without repeating a partner.',
             },
             {
                 title: 'Equal time on court',
                 description:
-                    'When there are more players than court slots, the players with the fewest games so far are picked first, and whoever has been resting longest breaks the tie.',
-                effect: 'Games played never differ by more than one across the whole group.',
+                    'With more players than court slots, whoever has played fewest goes on next; the longest rest breaks ties.',
+                effect: 'Games played never differ by more than one.',
             },
             {
                 title: 'Out-of-order starts',
                 description:
-                    'A court that frees up takes the earliest queued game whose four players are all off court — not necessarily the next one in the round.',
-                effect: 'Groups that finish early start their next game instead of watching the slowest court.',
+                    'A free court takes the earliest queued game whose four players are all off court — not necessarily the next in the round.',
+                effect: 'Groups that finish early play on instead of watching the slowest court.',
             },
             {
                 title: 'Extra games, on request',
                 description:
-                    'Sometimes the plan needs players who are still mid-game and an idle court cannot be filled from it. Tap "play an extra game" and the app builds one from whoever is free, favouring the fewest games and freshest partners.',
-                effect: 'An escape hatch when waiting is not worth it — never offered automatically, so the schedule still runs.',
-            },
-            {
-                title: 'Shared room',
-                description:
-                    'The room lives on the server, not on one phone. Every device polls for changes a few times a minute and any player can start a game or submit a score.',
-                effect: 'No single phone holds up the session.',
-            },
-            {
-                title: 'Scoring',
-                description:
-                    'Each game is played to a fixed total. Americano and Mexicano add points to each player; Team Americano adds them to the pair.',
-                effect: 'The standings update the moment a result is saved.',
+                    'If the plan needs players who are still mid-game, tap "play an extra game" and the app builds one from whoever is free.',
+                effect: 'Never offered automatically, so the schedule still runs.',
             },
         ],
         note: 'Rooms are kept for seven days and then deleted. No accounts, no tracking, no payment.',
