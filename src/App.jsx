@@ -221,7 +221,6 @@ export default function App() {
                         onPointsChange={setPointsPerMatch}
                         onCreate={handleCreate}
                         onBack={() => setStep('names')}
-                        creating={false}
                         offline={syncOffline}
                         error={setupError}
                     />

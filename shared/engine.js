@@ -663,13 +663,6 @@ export function planBoard(room) {
     return { byCourt, queued, resting, busy };
 }
 
-export function progressOf(room) {
-    const total = room.matches.length;
-    const done = room.matches.filter(m => m.status === 'done').length;
-    const live = room.matches.filter(m => m.status === 'live').length;
-    return { total, done, live, pending: total - done - live };
-}
-
 /* ===== actions ===== */
 
 function findMatch(room, matchId) {

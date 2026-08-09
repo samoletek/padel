@@ -20,7 +20,6 @@ export default function CourtsStep({
     onPointsChange,
     onCreate,
     onBack,
-    creating,
     offline,
     error,
 }) {
@@ -129,12 +128,8 @@ export default function CourtsStep({
             {error && <div className="error-banner">{error}</div>}
 
             <div className="step-buttons">
-                <button className="btn btn-ghost" onClick={onBack} disabled={creating}>
-                    {t.common.back}
-                </button>
-                <button className="btn btn-primary" onClick={onCreate} disabled={creating}>
-                    {creating ? l.creating : l.create}
-                </button>
+                <button className="btn btn-ghost" onClick={onBack}>{t.common.back}</button>
+                <button className="btn btn-primary" onClick={onCreate}>{l.create}</button>
             </div>
         </div>
     );
