@@ -53,9 +53,25 @@ browser and the API run exactly the same logic.
   mutations through `POST /api/act`, which uses `WATCH`/`MULTI` so two phones
   submitting at once cannot clobber each other
 
-If `REDIS_URL` is not set the API answers `503` and the app falls back to a
-device-only session stored in `localStorage`, so the schedule still works — it
-just cannot be shared.
+If `REDIS_URL` is not set — or the database behind it cannot be reached — the
+API answers `503` and the app falls back to a device-only session stored in
+`localStorage`. The schedule still works; it just cannot be shared.
+
+## Connecting the database
+
+Shared rooms need a Redis instance. Vercel only provisions marketplace
+databases through the dashboard, so this part is manual and takes about a
+minute:
+
+1. Open the [padel-mix project](https://vercel.com/architeq/padel-mix) →
+   **Storage** → **Create Database** → **Redis** → the **Free** plan.
+2. Connect it to `padel-mix` for production, preview and development. Vercel
+   injects `REDIS_URL` automatically.
+3. Redeploy (`vercel --prod`) so the functions pick up the new variable.
+
+Any Redis works — Upstash, Redis Cloud, a self-hosted instance. The app only
+reads `REDIS_URL`, and rooms live under the `padel:room:` prefix with a 7-day
+TTL, so an existing database can be reused safely.
 
 ## Local development
 
