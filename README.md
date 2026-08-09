@@ -53,25 +53,29 @@ browser and the API run exactly the same logic.
   mutations through `POST /api/act`, which uses `WATCH`/`MULTI` so two phones
   submitting at once cannot clobber each other
 
-If `REDIS_URL` is not set — or the database behind it cannot be reached — the
+If no Redis variable is set — or the database behind it cannot be reached — the
 API answers `503` and the app falls back to a device-only session stored in
 `localStorage`. The schedule still works; it just cannot be shared.
 
-## Connecting the database
+## The database
 
-Shared rooms need a Redis instance. Vercel only provisions marketplace
-databases through the dashboard, so this part is manual and takes about a
-minute:
+Shared rooms need Redis. Any instance works — Vercel's marketplace, Upstash,
+Redis Cloud, self-hosted. The connection string is read from `REDIS_URL`, or
+from any variable ending in `REDIS_URL`: attaching a marketplace store to a
+project where `REDIS_URL` is already taken makes Vercel rename it after the
+store, e.g. `PADEL_MIX_REDIS_URL`.
 
-1. Open the [padel-mix project](https://vercel.com/architeq/padel-mix) →
-   **Storage** → **Create Database** → **Redis** → the **Free** plan.
-2. Connect it to `padel-mix` for production, preview and development. Vercel
-   injects `REDIS_URL` automatically.
-3. Redeploy (`vercel --prod`) so the functions pick up the new variable.
+Note that Vercel only provisions marketplace databases through the dashboard —
+`vercel integration add redis` answers *"This resource must be provisioned
+through the Web UI"* — so that step cannot be scripted.
 
-Any Redis works — Upstash, Redis Cloud, a self-hosted instance. The app only
-reads `REDIS_URL`, and rooms live under the `padel:room:` prefix with a 7-day
-TTL, so an existing database can be reused safely.
+Two keys per room, both with a 7-day TTL:
+
+- `padel:room:<CODE>` — the room document
+- `padel:room:<CODE>:v` — its version, mirrored so that a poll which is already
+  up to date reads a handful of bytes instead of the whole room. That is the
+  difference between roughly 650 MB and a few MB of Redis bandwidth over a
+  three-hour session with twelve phones, which matters on a free plan.
 
 ## Local development
 
