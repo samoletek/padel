@@ -10,8 +10,21 @@ const MAX_RECONNECT_ATTEMPTS = 3;
 
 let clientPromise = null;
 
+/**
+ * Vercel prefixes a marketplace store's variable with the store name when
+ * `REDIS_URL` is already taken on the project, so accept either spelling
+ * rather than depending on how the database happened to be attached.
+ */
+function redisUrl() {
+    if (process.env.REDIS_URL) return process.env.REDIS_URL;
+    const key = Object.keys(process.env).find(
+        name => name.endsWith('REDIS_URL') && process.env[name],
+    );
+    return key ? process.env[key] : null;
+}
+
 export function syncConfigured() {
-    return Boolean(process.env.REDIS_URL);
+    return Boolean(redisUrl());
 }
 
 async function getClient() {
@@ -23,7 +36,7 @@ async function getClient() {
 
     if (!clientPromise) {
         const client = createClient({
-            url: process.env.REDIS_URL,
+            url: redisUrl(),
             socket: {
                 connectTimeout: CONNECT_TIMEOUT_MS,
                 // Give up rather than retrying forever: a request that can't
