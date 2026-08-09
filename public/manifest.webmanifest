@@ -1,0 +1,17 @@
+{
+  "name": "Padel Mix",
+  "short_name": "Padel Mix",
+  "description": "Americano, Mexicano and Team Americano padel schedules that every player can run from their own phone.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
