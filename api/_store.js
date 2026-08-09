@@ -72,6 +72,19 @@ async function getClient() {
 
 const keyFor = code => `${KEY_PREFIX}${String(code || '').toUpperCase()}`;
 
+/**
+ * A room is a few tens of kilobytes and every phone polls it every few
+ * seconds, so the version is mirrored into its own tiny key. Idle polls read
+ * only that, which keeps a whole session well inside a free tier's bandwidth.
+ */
+const versionKeyFor = code => `${keyFor(code)}:v`;
+
+export async function readVersion(code) {
+    const client = await getClient();
+    const raw = await client.get(versionKeyFor(code));
+    return raw === null ? null : Number(raw);
+}
+
 export function normalizeCode(code) {
     return String(code || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
 }
@@ -101,7 +114,10 @@ export async function createRoom(build) {
             NX: true,
             EX: ROOM_TTL_SECONDS,
         });
-        if (stored) return room;
+        if (stored) {
+            await client.set(versionKeyFor(code), String(room.version), { EX: ROOM_TTL_SECONDS });
+            return room;
+        }
     }
 
     throw new Error('Could not allocate a room code, please retry');
@@ -145,6 +161,7 @@ export async function mutateRoom(code, mutator) {
         const result = await client
             .multi()
             .set(key, JSON.stringify(room), { EX: ROOM_TTL_SECONDS })
+            .set(versionKeyFor(code), String(room.version), { EX: ROOM_TTL_SECONDS })
             .exec();
 
         if (result) return room;

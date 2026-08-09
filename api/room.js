@@ -1,5 +1,5 @@
 import { createRoom as buildRoom, PLAYER_COUNTS, FORMATS, POINT_OPTIONS, maxCourtsFor, clampRounds } from '../shared/engine.js';
-import { createRoom, readRoom, normalizeCode, sendError, syncConfigured } from './_store.js';
+import { createRoom, readRoom, readVersion, normalizeCode, sendError, syncConfigured } from './_store.js';
 
 const MAX_NAME_LENGTH = 24;
 
@@ -21,13 +21,18 @@ export default async function handler(req, res) {
             const code = normalizeCode(url.searchParams.get('code'));
             if (!code) return sendError(res, 400, 'Room code is required', 'bad_request');
 
+            // A poll that is already up to date reads the version key only,
+            // never the whole room.
+            const since = Number(url.searchParams.get('v'));
+            if (Number.isFinite(since)) {
+                const current = await readVersion(code);
+                if (current !== null && current === since) {
+                    return res.status(200).json({ unchanged: true, version: current });
+                }
+            }
+
             const room = await readRoom(code);
             if (!room) return sendError(res, 404, 'Room not found', 'not_found');
-
-            const since = Number(url.searchParams.get('v'));
-            if (Number.isFinite(since) && since === room.version) {
-                return res.status(200).json({ unchanged: true, version: room.version });
-            }
 
             return res.status(200).json({ room });
         }
