@@ -60,7 +60,10 @@ export default function CourtsStep({
             {courtCount > 1 ? (
                 <div className="field-block">
                     <div className="field-label">{l.namesLabel}</div>
-                    <div className="court-names">
+                    <div
+                        className="court-names"
+                        style={{ '--court-cols': courtCount <= 3 ? courtCount : courtCount === 4 ? 2 : 3 }}
+                    >
                         {Array.from({ length: courtCount }, (_, index) => (
                             <input
                                 key={index}

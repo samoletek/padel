@@ -4,8 +4,8 @@
   "description": "Americano, Mexicano and Team Americano padel schedules that every player can run from their own phone.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0f",
-  "theme_color": "#0a0a0f",
+  "background_color": "#0c1410",
+  "theme_color": "#0c1410",
   "icons": [
     {
       "src": "/icon.svg",
