@@ -29,6 +29,14 @@ Padel Mix fixes both halves of that:
 | Mexicano | drawn from the standings after each round | individual |
 | Team Americano | fixed pairs all session | shared by the pair |
 
+Games are played to a fixed number of points — 16 by default, four serves each,
+which is the usual Americano scoring.
+
+A court is booked by the hour, not by the round, so a session is open-ended by
+default: the draw stages about six rounds ahead of play and tops itself up as
+games finish. Fixed-length sessions are still available if you want a set
+number of rounds.
+
 ## How the draw works
 
 The schedule is generated once, up front:
@@ -48,7 +56,7 @@ browser and the API run exactly the same logic.
 
 - Vite + React 19, no router and no state library
 - Vercel serverless functions in `api/`
-- Redis for room state, keyed `padel:room:<CODE>` with a 7-day TTL
+- Redis for room state, keyed `padel:room:<CODE>`, expiring after three hours
 - Clients poll `GET /api/room` every 3 seconds (15 while backgrounded) and send
   mutations through `POST /api/act`, which uses `WATCH`/`MULTI` so two phones
   submitting at once cannot clobber each other
@@ -69,7 +77,8 @@ Note that Vercel only provisions marketplace databases through the dashboard —
 `vercel integration add redis` answers *"This resource must be provisioned
 through the Web UI"* — so that step cannot be scripted.
 
-Two keys per room, both with a 7-day TTL:
+A room lives for three hours from creation and is then deleted. Two keys, both
+pinned to that same deadline so writes cannot extend it:
 
 - `padel:room:<CODE>` — the room document
 - `padel:room:<CODE>:v` — its version, mirrored so that a poll which is already

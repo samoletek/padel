@@ -13,10 +13,12 @@ export default function CourtsStep({
     courtCount,
     courtNames,
     rounds,
+    endless,
     pointsPerMatch,
     onCourtCountChange,
     onCourtNamesChange,
     onRoundsChange,
+    onEndlessChange,
     onPointsChange,
     onCreate,
     onBack,
@@ -84,29 +86,51 @@ export default function CourtsStep({
 
             <div className="field-row">
                 <div className="field-block">
-                    <div className="field-label">{l.roundsLabel}</div>
-                    <div className="stepper">
+                    <div className="field-label">{l.lengthLabel}</div>
+                    <div className="segmented">
                         <button
                             type="button"
-                            className="stepper-button"
-                            onClick={() => onRoundsChange(Math.max(MIN_ROUNDS, rounds - 1))}
-                            disabled={rounds <= MIN_ROUNDS}
-                            aria-label="-1"
+                            className={`segmented-item ${endless ? 'selected' : ''}`}
+                            onClick={() => onEndlessChange(true)}
                         >
-                            −
+                            {l.lengthEndless}
                         </button>
-                        <span className="stepper-value">{rounds}</span>
                         <button
                             type="button"
-                            className="stepper-button"
-                            onClick={() => onRoundsChange(Math.min(MAX_ROUNDS, rounds + 1))}
-                            disabled={rounds >= MAX_ROUNDS}
-                            aria-label="+1"
+                            className={`segmented-item ${endless ? '' : 'selected'}`}
+                            onClick={() => onEndlessChange(false)}
                         >
-                            +
+                            {l.lengthFixed}
                         </button>
                     </div>
-                    <p className="field-hint">{l.roundsHint(rounds, gamesEach)}</p>
+
+                    {!endless && (
+                        <div className="stepper stepper-spaced">
+                            <button
+                                type="button"
+                                className="stepper-button"
+                                onClick={() => onRoundsChange(Math.max(MIN_ROUNDS, rounds - 1))}
+                                disabled={rounds <= MIN_ROUNDS}
+                                aria-label="-1"
+                            >
+                                −
+                            </button>
+                            <span className="stepper-value">{rounds}</span>
+                            <button
+                                type="button"
+                                className="stepper-button"
+                                onClick={() => onRoundsChange(Math.min(MAX_ROUNDS, rounds + 1))}
+                                disabled={rounds >= MAX_ROUNDS}
+                                aria-label="+1"
+                            >
+                                +
+                            </button>
+                        </div>
+                    )}
+
+                    <p className="field-hint">
+                        {endless ? l.endlessHint : l.roundsHint(rounds, gamesEach)}
+                    </p>
                 </div>
 
                 <div className="field-block">

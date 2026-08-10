@@ -71,7 +71,7 @@ export default {
     names: {
         title: 'Who is playing?',
         subtitle: 'Names or nicknames — these show up on every phone in the room',
-        placeholder: index => `Player ${index}`,
+        placeholder: 'Player',
         reuse: 'Use last session’s names',
         clear: 'Clear all',
         missing: 'Fill in every name to continue',
@@ -88,11 +88,14 @@ export default {
         namesHint: 'However they are called at your club',
         namePlaceholder: index => `Court ${index}`,
         singleCourt: 'One court — no name needed',
-        roundsLabel: 'Rounds',
+        lengthLabel: 'How long',
+        lengthEndless: 'Until time runs out',
+        lengthFixed: 'Fixed rounds',
+        endlessHint: 'The draw keeps going by itself for as long as the room lives. No need to count rounds.',
         roundsHint: (rounds, perPlayer) =>
             `${rounds} rounds · about ${perPlayer} ${perPlayer === 1 ? 'game' : 'games'} each`,
         pointsLabel: 'Points per game',
-        pointsHint: 'Every game is played to this total',
+        pointsHint: 'Americano: to 16, four serves each',
         create: 'Create room',
         creating: 'Building the draw…',
         offlineNotice:
@@ -100,8 +103,7 @@ export default {
     },
 
     room: {
-        tabNow: 'Now',
-        tabSchedule: 'Schedule',
+        tabGames: 'Games',
         tabTable: 'Standings',
         codeLabel: 'Room',
         shareTitle: 'Everyone joins here',
@@ -110,6 +112,8 @@ export default {
         localOnly: 'On this device only',
         localOnlyHint: 'This session was created without sync, so other phones cannot join it.',
         syncing: 'Syncing…',
+        timeLeft: 'left',
+        expired: 'time is up',
         syncError: 'Connection lost — retrying',
         whoAreYou: 'Who are you?',
         whoAreYouHint: 'Pick your name to highlight your games',
@@ -136,7 +140,9 @@ export default {
         finishedHint: 'Add more rounds if you are still on court.',
         addRounds: 'Add 2 rounds',
         gamesLeft: n => `${n} ${n === 1 ? 'game' : 'games'} left in the plan`,
-        vs: 'vs',
+        played: n => `${n} ${n === 1 ? 'game' : 'games'} played`,
+        courtFree: name => `${name} is free`,
+        finishedMatch: 'finished',
         scoreTitle: 'Final score',
         scoreHint: total => `Played to ${total} points`,
         scoreTotal: (sum, total) => `Total ${sum} of ${total}`,
@@ -195,6 +201,6 @@ export default {
                 effect: 'Never offered automatically, so the schedule still runs.',
             },
         ],
-        note: 'Rooms are kept for seven days and then deleted. No accounts, no tracking, no payment.',
+        note: 'A room lives for 3 hours and is then deleted. No accounts, no tracking, no payment.',
     },
 };

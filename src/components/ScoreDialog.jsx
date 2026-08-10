@@ -47,7 +47,7 @@ export default function ScoreDialog({ room, match, me, onSubmit, onReopen, onClo
                     value={scoreA}
                     onNudge={delta => nudge('a', delta)}
                 />
-                <div className="score-divider">{l.vs}</div>
+                <div className="score-divider">vs</div>
                 <ScoreSide
                     names={match.b.map(nameOf)}
                     highlight={match.b.includes(me)}

@@ -71,7 +71,7 @@ export default {
     names: {
         title: 'Кто играет?',
         subtitle: 'Имена или ники — их увидят все в комнате',
-        placeholder: index => `Игрок ${index}`,
+        placeholder: 'Игрок',
         reuse: 'Взять имена из прошлой сессии',
         clear: 'Очистить',
         missing: 'Заполните все имена, чтобы продолжить',
@@ -88,11 +88,14 @@ export default {
         namesHint: 'Как их называют у вас в клубе',
         namePlaceholder: index => `Корт ${index}`,
         singleCourt: 'Корт один — название не нужно',
-        roundsLabel: 'Раундов',
+        lengthLabel: 'Сколько играем',
+        lengthEndless: 'Пока есть время',
+        lengthFixed: 'Фикс. раунды',
+        endlessHint: 'Сетка продолжается сама, пока комната жива. Раунды считать не нужно.',
         roundsHint: (rounds, perPlayer) =>
             `Раундов: ${rounds} · игр на каждого: ~${perPlayer}`,
         pointsLabel: 'Очков в игре',
-        pointsHint: 'Каждая игра идёт до этой суммы',
+        pointsHint: 'Американо: до 16, каждый подаёт по 4 подачи',
         create: 'Создать комнату',
         creating: 'Строим сетку…',
         offlineNotice:
@@ -100,8 +103,7 @@ export default {
     },
 
     room: {
-        tabNow: 'Сейчас',
-        tabSchedule: 'Сетка',
+        tabGames: 'Игры',
         tabTable: 'Таблица',
         codeLabel: 'Комната',
         shareTitle: 'Сюда заходят все',
@@ -110,6 +112,8 @@ export default {
         localOnly: 'Только на этом устройстве',
         localOnlyHint: 'Сессия создана без синхронизации, другие телефоны к ней не подключатся.',
         syncing: 'Синхронизация…',
+        timeLeft: 'осталось',
+        expired: 'время вышло',
         syncError: 'Нет связи — пробуем снова',
         whoAreYou: 'Кто вы?',
         whoAreYouHint: 'Выберите себя, чтобы подсветить свои игры',
@@ -136,7 +140,9 @@ export default {
         finishedHint: 'Добавьте раунды, если ещё есть время на корте.',
         addRounds: 'Добавить 2 раунда',
         gamesLeft: n => `В плане осталось игр: ${n}`,
-        vs: 'против',
+        played: n => `Сыграно игр: ${n}`,
+        courtFree: name => `${name} свободен`,
+        finishedMatch: 'завершено',
         scoreTitle: 'Итоговый счёт',
         scoreHint: total => `Игра до ${total} очков`,
         scoreTotal: (sum, total) => `Сумма ${sum} из ${total}`,
@@ -195,6 +201,6 @@ export default {
                 effect: 'Само не предлагается, поэтому план не ломается.',
             },
         ],
-        note: 'Комнаты хранятся семь дней и удаляются. Без аккаунтов, трекинга и оплаты.',
+        note: 'Комната живёт 3 часа и удаляется. Без аккаунтов, трекинга и оплаты.',
     },
 };

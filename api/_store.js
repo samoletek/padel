@@ -1,7 +1,7 @@
 import { createClient } from 'redis';
 
 const KEY_PREFIX = 'padel:room:';
-const ROOM_TTL_SECONDS = 60 * 60 * 24 * 7;
+const FALLBACK_TTL_SECONDS = 60 * 60 * 3;
 const CODE_ALPHABET = 'ACDEFGHJKLMNPQRTUVWXY34679';
 const CODE_LENGTH = 4;
 const MUTATE_ATTEMPTS = 6;
@@ -79,6 +79,16 @@ const keyFor = code => `${KEY_PREFIX}${String(code || '').toUpperCase()}`;
  */
 const versionKeyFor = code => `${keyFor(code)}:v`;
 
+/**
+ * Rooms die three hours after they are created, so every write pins the same
+ * absolute deadline rather than pushing it further out.
+ */
+function expiryFor(room) {
+    const at = Number(room?.expiresAt);
+    if (Number.isFinite(at) && at > Date.now()) return { EXAT: Math.ceil(at / 1000) };
+    return { EX: FALLBACK_TTL_SECONDS };
+}
+
 export async function readVersion(code) {
     const client = await getClient();
     const raw = await client.get(versionKeyFor(code));
@@ -110,12 +120,13 @@ export async function createRoom(build) {
     for (let attempt = 0; attempt < 10; attempt++) {
         const code = randomCode();
         const room = build(code);
+        const expiry = expiryFor(room);
         const stored = await client.set(keyFor(code), JSON.stringify(room), {
             NX: true,
-            EX: ROOM_TTL_SECONDS,
+            ...expiry,
         });
         if (stored) {
-            await client.set(versionKeyFor(code), String(room.version), { EX: ROOM_TTL_SECONDS });
+            await client.set(versionKeyFor(code), String(room.version), expiry);
             return room;
         }
     }
@@ -158,10 +169,11 @@ export async function mutateRoom(code, mutator) {
         room.version = (room.version || 0) + 1;
         room.updatedAt = Date.now();
 
+        const expiry = expiryFor(room);
         const result = await client
             .multi()
-            .set(key, JSON.stringify(room), { EX: ROOM_TTL_SECONDS })
-            .set(versionKeyFor(code), String(room.version), { EX: ROOM_TTL_SECONDS })
+            .set(key, JSON.stringify(room), expiry)
+            .set(versionKeyFor(code), String(room.version), expiry)
             .exec();
 
         if (result) return room;

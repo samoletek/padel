@@ -21,7 +21,7 @@ import Modal from './components/Modal';
 const SETUP_STEPS = ['landing', 'format', 'players', 'names', 'courts'];
 const LOCAL_CODE = 'LOCAL';
 
-const defaultCourtNames = count => Array.from({ length: count }, (_, i) => `Court ${i + 1}`);
+
 
 function readHashCode() {
     const match = window.location.hash.match(/^#\/r\/([A-Za-z0-9]{1,8})$/);
@@ -36,9 +36,11 @@ export default function App() {
     const [playerCount, setPlayerCount] = useState(8);
     const [names, setNames] = useState(() => Array.from({ length: 8 }, () => ''));
     const [courtCount, setCourtCount] = useState(2);
-    const [courtNames, setCourtNames] = useState(() => defaultCourtNames(2));
+    const [courtNames, setCourtNames] = useState(['', '']);
     const [rounds, setRounds] = useState(() => defaultRoundsFor(8));
-    const [pointsPerMatch, setPointsPerMatch] = useState(24);
+    // Court bookings are timed, not counted, so an open-ended session is the default.
+    const [endless, setEndless] = useState(true);
+    const [pointsPerMatch, setPointsPerMatch] = useState(16);
 
     const [activeRoom, setActiveRoom] = useState(null);
     const [isLocalRoom, setIsLocalRoom] = useState(false);
@@ -93,17 +95,13 @@ export default function App() {
         const maxCourts = maxCourtsFor(count);
         const nextCourts = Math.min(courtCount, maxCourts);
         setCourtCount(nextCourts);
-        setCourtNames(current =>
-            Array.from({ length: nextCourts }, (_, i) => current[i] ?? `Court ${i + 1}`),
-        );
+        setCourtNames(current => Array.from({ length: nextCourts }, (_, i) => current[i] ?? ''));
         setRounds(defaultRoundsFor(count));
     };
 
     const applyCourtCount = count => {
         setCourtCount(count);
-        setCourtNames(current =>
-            Array.from({ length: count }, (_, i) => current[i] ?? `Court ${i + 1}`),
-        );
+        setCourtNames(current => Array.from({ length: count }, (_, i) => current[i] ?? ''));
     };
 
     const handleCreate = async () => {
@@ -112,9 +110,10 @@ export default function App() {
             playerNames: names.map(name => name.trim()),
             courtNames: Array.from(
                 { length: courtCount },
-                (_, i) => (courtNames[i] || '').trim() || `Court ${i + 1}`,
+                (_, i) => (courtNames[i] || '').trim() || t.courts.namePlaceholder(i + 1),
             ),
             rounds,
+            endless,
             pointsPerMatch,
         };
 
@@ -214,10 +213,12 @@ export default function App() {
                         courtCount={courtCount}
                         courtNames={courtNames}
                         rounds={rounds}
+                        endless={endless}
                         pointsPerMatch={pointsPerMatch}
                         onCourtCountChange={applyCourtCount}
                         onCourtNamesChange={setCourtNames}
                         onRoundsChange={setRounds}
+                        onEndlessChange={setEndless}
                         onPointsChange={setPointsPerMatch}
                         onCreate={handleCreate}
                         onBack={() => setStep('names')}

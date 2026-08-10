@@ -9,6 +9,11 @@ export const POINT_OPTIONS = [16, 21, 24, 32];
 export const PLAYERS_PER_MATCH = 4;
 export const MIN_ROUNDS = 3;
 export const MAX_ROUNDS = 20;
+/* A court booking is usually 1.5–2 hours and nobody counts rounds up front,
+   so an endless session keeps a buffer of games ahead of play instead. */
+export const ENDLESS_START_ROUNDS = 9;
+export const ENDLESS_MAX_ROUNDS = 40;
+export const ROOM_LIFETIME_MS = 3 * 60 * 60 * 1000;
 
 const PARTNER_WEIGHT = 12;
 const OPPONENT_WEIGHT = 1;
@@ -330,7 +335,8 @@ export function createRoom({
     playerNames = [],
     courtNames = [],
     rounds,
-    pointsPerMatch = 24,
+    endless = false,
+    pointsPerMatch = 16,
     seed = Date.now(),
 }) {
     if (!FORMATS.includes(format)) throw new Error(`Unknown format: ${format}`);
@@ -345,7 +351,9 @@ export function createRoom({
         throw new Error('More courts than players can fill');
     }
 
-    const roundsPlanned = clampRounds(rounds ?? defaultRoundsFor(players.length));
+    const roundsPlanned = endless
+        ? ENDLESS_START_ROUNDS
+        : clampRounds(rounds ?? defaultRoundsFor(players.length));
     const rng = mulberry32(seed);
     const playerIds = players.map(p => p.id);
 
@@ -357,6 +365,8 @@ export function createRoom({
         format,
         pointsPerMatch,
         roundsPlanned,
+        endless,
+        expiresAt: Date.now() + ROOM_LIFETIME_MS,
         seed,
         players,
         courts,
@@ -629,34 +639,42 @@ export function planBoard(room) {
 
     const pending = room.matches.filter(m => m.status === 'pending').sort(matchOrder);
     const reserved = new Set();
-    const byCourt = [];
 
-    for (const court of room.courts) {
-        const live = room.matches.find(m => m.status === 'live' && m.court === court.id) || null;
-        let next = null;
-        let filler = null;
+    const slots = room.courts.map(court => ({
+        court,
+        live: room.matches.find(m => m.status === 'live' && m.court === court.id) || null,
+        next: null,
+        filler: null,
+    }));
 
-        if (!live) {
-            next = pending.find(match =>
-                !reserved.has(match.id) &&
-                [...match.a, ...match.b].every(id => !busy.has(id))
-            ) || null;
+    // Walk the queue in order — earliest playable game first, so the schedule
+    // keeps moving — and give each game its own court whenever that one is
+    // free, so court numbers only shift when reality forces them to.
+    let freeSlots = slots.filter(slot => !slot.live);
 
-            if (next) {
-                reserved.add(next.id);
-                for (const id of [...next.a, ...next.b]) busy.add(id);
-            } else if (pending.length > 0 && room.format !== 'mexicano') {
-                const free = room.players.map(p => p.id).filter(id => !busy.has(id));
-                filler = proposeFiller(room, free);
-                if (filler) {
-                    for (const id of [...filler.a, ...filler.b]) busy.add(id);
-                }
-            }
-        }
+    for (const match of pending) {
+        if (freeSlots.length === 0) break;
+        if ([...match.a, ...match.b].some(id => busy.has(id))) continue;
 
-        byCourt.push({ court, live, next, filler });
+        const slot = freeSlots.find(s => s.court.id === match.court) || freeSlots[0];
+        slot.next = match;
+        reserved.add(match.id);
+        for (const id of [...match.a, ...match.b]) busy.add(id);
+        freeSlots = freeSlots.filter(s => s !== slot);
     }
 
+    // Courts still idle can only be filled with an off-plan game.
+    if (pending.length > 0 && room.format !== 'mexicano') {
+        for (const slot of freeSlots) {
+            const free = room.players.map(p => p.id).filter(id => !busy.has(id));
+            const filler = proposeFiller(room, free);
+            if (!filler) break;
+            slot.filler = filler;
+            for (const id of [...filler.a, ...filler.b]) busy.add(id);
+        }
+    }
+
+    const byCourt = slots;
     const queued = pending.filter(m => !reserved.has(m.id));
     const resting = room.players.filter(p => !busy.has(p.id)).map(p => p.id);
 
@@ -664,6 +682,83 @@ export function planBoard(room) {
 }
 
 /* ===== actions ===== */
+
+const roundCeiling = room => (room.endless ? ENDLESS_MAX_ROUNDS : MAX_ROUNDS);
+
+/** Grows the schedule by `extra` rounds, continuing the existing pairings. */
+function appendRounds(room, extra) {
+    const generated = roundsGenerated(room);
+    if (generated >= roundCeiling(room)) return false;
+
+    const room_extra = Math.min(extra, roundCeiling(room) - generated);
+    room.roundsPlanned = Math.min(roundCeiling(room), room.roundsPlanned + room_extra);
+
+    if (room.format === 'mexicano') return generateMexicanoRound(room);
+
+    const rng = mulberry32((room.seed || 1) + generated * 7919 + room_extra);
+    const stats = statsFromMatches(room);
+
+    // Games already scheduled but not yet played still shape who has met whom.
+    for (const match of room.matches) {
+        if (match.status === 'done') continue;
+        stats.partner[pairKey(match.a[0], match.a[1])] =
+            partnerCount(stats, match.a[0], match.a[1]) + 1;
+        stats.partner[pairKey(match.b[0], match.b[1])] =
+            partnerCount(stats, match.b[0], match.b[1]) + 1;
+        for (const a of match.a) {
+            for (const b of match.b) {
+                stats.opponent[pairKey(a, b)] = opponentCount(stats, a, b) + 1;
+            }
+        }
+        for (const id of [...match.a, ...match.b]) stats.games[id] += 1;
+    }
+
+    const schedule = [];
+    if (room.format === 'teamAmericano') {
+        schedule.push(
+            ...buildTeamAmericano(room.pairs, room.courts.length, room_extra, rng, teamHistory(room)),
+        );
+    } else {
+        const playerIds = room.players.map(p => p.id);
+        const perRound = Math.min(
+            room.courts.length,
+            Math.floor(playerIds.length / PLAYERS_PER_MATCH),
+        );
+        for (let round = 0; round < room_extra; round++) {
+            const active = pickActive(playerIds, stats, perRound * PLAYERS_PER_MATCH, rng);
+            const groups = arrangeGroups(active, stats, rng);
+            commitRound(groups, stats, playerIds);
+            schedule.push(groups);
+        }
+    }
+
+    const built = materialize(schedule, room.courts, generated, room.matchSeq);
+    room.matches = room.matches.concat(built.matches);
+    room.matchSeq = built.seq;
+    return true;
+}
+
+/**
+ * An endless room has no target round count, so it just keeps a couple of
+ * rounds queued ahead of whatever is being played.
+ */
+function topUpEndless(room) {
+    if (!room.endless) return false;
+    // A deep queue is what lets a freed court find a game whose players are
+    // all off court, so keep roughly six rounds staged ahead of play.
+    const buffer = room.courts.length * 6;
+    let grew = false;
+    let guard = 0;
+    while (
+        room.matches.filter(m => m.status === 'pending').length < buffer &&
+        roundsGenerated(room) < ENDLESS_MAX_ROUNDS &&
+        guard++ < 10
+    ) {
+        if (!appendRounds(room, 3)) break;
+        grew = true;
+    }
+    return grew;
+}
 
 function findMatch(room, matchId) {
     const match = room.matches.find(m => m.id === matchId);
@@ -762,6 +857,7 @@ export function applyAction(room, action) {
             match.status = 'done';
             match.endedAt = Date.now();
             if (room.format === 'mexicano') generateMexicanoRound(room);
+            topUpEndless(room);
             return true;
         }
 
@@ -806,58 +902,7 @@ export function applyAction(room, action) {
 
         case 'extend': {
             const extra = Math.min(6, Math.max(1, Math.round(Number(action.rounds) || 1)));
-            const generated = roundsGenerated(room);
-            room.roundsPlanned = Math.min(MAX_ROUNDS, room.roundsPlanned + extra);
-
-            if (room.format === 'mexicano') {
-                generateMexicanoRound(room);
-                return true;
-            }
-
-            const rng = mulberry32((room.seed || 1) + generated * 7919 + extra);
-            const stats = statsFromMatches(room);
-            for (const match of room.matches) {
-                if (match.status === 'done') continue;
-                stats.partner[pairKey(match.a[0], match.a[1])] =
-                    partnerCount(stats, match.a[0], match.a[1]) + 1;
-                stats.partner[pairKey(match.b[0], match.b[1])] =
-                    partnerCount(stats, match.b[0], match.b[1]) + 1;
-                for (const a of match.a) {
-                    for (const b of match.b) {
-                        stats.opponent[pairKey(a, b)] = opponentCount(stats, a, b) + 1;
-                    }
-                }
-                for (const id of [...match.a, ...match.b]) stats.games[id] += 1;
-            }
-
-            const schedule = [];
-            if (room.format === 'teamAmericano') {
-                schedule.push(
-                    ...buildTeamAmericano(
-                        room.pairs,
-                        room.courts.length,
-                        extra,
-                        rng,
-                        teamHistory(room),
-                    ),
-                );
-            } else {
-                const playerIds = room.players.map(p => p.id);
-                const perRound = Math.min(
-                    room.courts.length,
-                    Math.floor(playerIds.length / PLAYERS_PER_MATCH),
-                );
-                for (let round = 0; round < extra; round++) {
-                    const active = pickActive(playerIds, stats, perRound * PLAYERS_PER_MATCH, rng);
-                    const groups = arrangeGroups(active, stats, rng);
-                    commitRound(groups, stats, playerIds);
-                    schedule.push(groups);
-                }
-            }
-
-            const built = materialize(schedule, room.courts, generated, room.matchSeq);
-            room.matches = room.matches.concat(built.matches);
-            room.matchSeq = built.seq;
+            appendRounds(room, extra);
             return true;
         }
 

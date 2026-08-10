@@ -57,7 +57,8 @@ export default async function handler(req, res) {
 
             const pointsPerMatch = POINT_OPTIONS.includes(Number(body.pointsPerMatch))
                 ? Number(body.pointsPerMatch)
-                : 24;
+                : 16;
+            const endless = Boolean(body.endless);
             const rounds = clampRounds(body.rounds);
 
             const room = await createRoom(code =>
@@ -67,6 +68,7 @@ export default async function handler(req, res) {
                     playerNames,
                     courtNames,
                     rounds,
+                    endless,
                     pointsPerMatch,
                     seed: Math.floor(Math.random() * 2 ** 31),
                 }),

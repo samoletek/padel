@@ -2,21 +2,27 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '../i18n';
 import { planBoard } from '../../shared/engine.js';
 import { loadIdentity, saveIdentity } from '../lib/storage';
-import LiveBoard from './LiveBoard';
-import ScheduleBoard from './ScheduleBoard';
+import GamesBoard from './GamesBoard';
 import StandingsTable from './StandingsTable';
 import ScoreDialog from './ScoreDialog';
 import ShareDialog from './ShareDialog';
 import Modal from './Modal';
 
-const TABS = ['now', 'schedule', 'table'];
+const TABS = ['games', 'table'];
 const CLOCK_INTERVAL_MS = 30000;
+
+function countdown(expiresAt, now) {
+    const left = Math.max(0, (expiresAt || 0) - now);
+    if (left <= 0) return null;
+    const minutes = Math.floor(left / 60000);
+    return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`;
+}
 
 export default function RoomView({ room, connection, act, actionError, dismissError, onLeave }) {
     const { t } = useTranslation();
     const l = t.room;
 
-    const [tab, setTab] = useState('now');
+    const [tab, setTab] = useState('games');
     const [me, setMe] = useState(() => loadIdentity(room.code));
     const [scoreMatch, setScoreMatch] = useState(null);
     const [showShare, setShowShare] = useState(false);
@@ -62,8 +68,6 @@ export default function RoomView({ room, connection, act, actionError, dismissEr
         return { kind: 'rest', text: l.yourRest };
     }, [board, me, l]);
 
-    const openScore = match => setScoreMatch(match);
-
     // The dialog holds a match snapshot; refresh it from the live room each render.
     const activeMatch = scoreMatch
         ? room.matches.find(match => match.id === scoreMatch.id) || null
@@ -83,7 +87,7 @@ export default function RoomView({ room, connection, act, actionError, dismissEr
                 </button>
 
                 <div className="room-header-right">
-                    <ConnectionBadge connection={connection} labels={l} common={t.common} />
+                    <RoomClock room={room} now={now} connection={connection} labels={l} common={t.common} />
                     {!isLocal && (
                         <button className="btn btn-secondary btn-small" onClick={() => setShowShare(true)}>
                             {l.shareButton}
@@ -114,7 +118,7 @@ export default function RoomView({ room, connection, act, actionError, dismissEr
                         className={`room-tab ${tab === key ? 'active' : ''}`}
                         onClick={() => setTab(key)}
                     >
-                        {key === 'now' ? l.tabNow : key === 'schedule' ? l.tabSchedule : l.tabTable}
+                        {key === 'games' ? l.tabGames : l.tabTable}
                     </button>
                 ))}
             </nav>
@@ -122,8 +126,8 @@ export default function RoomView({ room, connection, act, actionError, dismissEr
             {isLocal && <div className="warning-banner">{l.localOnlyHint}</div>}
             {actionError && <div className="error-banner room-error">{actionError}</div>}
 
-            {tab === 'now' && (
-                <LiveBoard
+            {tab === 'games' && (
+                <GamesBoard
                     room={room}
                     board={board}
                     me={me}
@@ -132,13 +136,12 @@ export default function RoomView({ room, connection, act, actionError, dismissEr
                     onFill={(courtId, filler) =>
                         act({ type: 'fill', courtId, a: filler.a, b: filler.b })
                     }
-                    onScore={openScore}
+                    onScore={setScoreMatch}
                     onCancel={matchId => act({ type: 'cancel', matchId })}
                     onExtend={() => act({ type: 'extend', rounds: 2 })}
                 />
             )}
 
-            {tab === 'schedule' && <ScheduleBoard room={room} me={me} onScore={openScore} />}
             {tab === 'table' && <StandingsTable room={room} me={me} />}
 
             <div className="room-footer">
@@ -190,17 +193,21 @@ export default function RoomView({ room, connection, act, actionError, dismissEr
     );
 }
 
-function ConnectionBadge({ connection, labels, common }) {
+/** How long the room has left, or why it is not counting down. */
+function RoomClock({ room, now, connection, labels, common }) {
     if (connection === 'local') {
         return <span className="conn-badge is-local">{common.offline}</span>;
     }
     if (connection === 'offline' || connection === 'missing') {
         return <span className="conn-badge is-off">{labels.syncError}</span>;
     }
+
+    const left = countdown(room.expiresAt, now);
+    if (!left) return <span className="conn-badge is-off">{labels.expired}</span>;
+
     return (
-        <span className="conn-badge is-live">
-            <span className="pulse-dot" />
-            {common.live}
+        <span className="conn-badge is-clock">
+            <strong>{left}</strong> {labels.timeLeft}
         </span>
     );
 }
