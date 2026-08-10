@@ -302,7 +302,7 @@ body {
   font-weight: 900;
   line-height: 1.12;
   max-width: 660px;
-  margin: 0 auto 18px;
+  margin: 0 auto 28px;
   background: linear-gradient(135deg, #fff 0%, #ccc 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -313,14 +313,6 @@ body {
   background: var(--accent-gradient);
   -webkit-background-clip: text;
   background-clip: text;
-}
-
-.landing-subtitle {
-  font-size: 16px;
-  color: var(--text-secondary);
-  line-height: 1.6;
-  margin: 0 auto 28px;
-  max-width: 520px;
 }
 
 .how-steps {

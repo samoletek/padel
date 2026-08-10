@@ -9,12 +9,8 @@ export default function LandingStep({ onNext, onJoin }) {
             <div className="landing-badge">{l.badge}</div>
 
             <h1>
-                {l.title1}
-                <br />
-                {l.title2} <span>{l.titleHighlight}</span>
+                {l.title} <span>{l.titleHighlight}</span>
             </h1>
-
-            <p className="landing-subtitle">{l.subtitle}</p>
 
             <ol className="how-steps">
                 {l.steps.map((step, index) => (

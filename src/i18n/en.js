@@ -20,23 +20,12 @@ export default {
 
     landing: {
         badge: 'Free · No app store',
-        title1: 'Padel mixes',
-        title2: 'that keep',
-        titleHighlight: 'every court busy',
-        subtitle: 'Americano, Mexicano and Team Americano for 4 to 24 players.',
+        title: 'Padel mixes',
+        titleHighlight: 'without the wait',
         steps: [
-            {
-                title: 'Set up the session',
-                desc: 'Pick a mix, how many are playing, their names and your courts.',
-            },
-            {
-                title: 'Share the code',
-                desc: 'Everyone joins from their own phone. Nothing to install.',
-            },
-            {
-                title: 'Play',
-                desc: 'The board shows who is on which court. Any player can start a game or enter a score.',
-            },
+            { title: 'Create a room', desc: 'Format, how many players, names and courts' },
+            { title: 'Share the code', desc: 'Everyone joins from their own phone' },
+            { title: 'Play', desc: 'The table shows the court and the results' },
         ],
         cta: 'Get Started',
         joinCta: 'Join a room',
